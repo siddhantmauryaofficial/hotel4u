@@ -40,7 +40,8 @@ router.get(
     console.log('Show route id:', id);
     console.log('Show route listing:', listing);
     if (!listing) {
-      return next(new ExpressError(404, 'Listing not found!'));
+      req.flash('error', "Listing you requested doesn't exist!");
+      return res.redirect('/listings');
     }
     res.render('listing/show', { listing });
   })
@@ -84,6 +85,7 @@ router.post(
     normalizeListingImage(listingData);
     const newListing = new Listing(listingData);
     await newListing.save();
+    req.flash('success', 'New Listing Created!');
     res.redirect('/listings');
   })
 );
@@ -95,6 +97,10 @@ router.get(
   wrapAsync(async (req, res) => {
     let { id } = req.params;
     const listing = await Listing.findById(id);
+    if (!listing) {
+      req.flash('error', "Listing you requested doesn't exist!");
+      return res.redirect('/listings');
+    }
     res.render('listing/edit', { listing });
   })
 );
@@ -109,6 +115,9 @@ router.put(
     const listingData = { ...req.body.listing };
     normalizeListingImage(listingData);
     await Listing.findByIdAndUpdate(id, listingData, { runValidators: true });
+
+    req.flash('success', 'Listing Updated!');
+
     res.redirect(`/listings/${id}`);
   })
 );
@@ -121,6 +130,7 @@ router.delete(
     let { id } = req.params;
     let deletedListing = await Listing.findOneAndDelete({ _id: id });
     console.log(deletedListing);
+    req.flash('success', 'Listing deleted');
     res.redirect('/listings');
   })
 );
